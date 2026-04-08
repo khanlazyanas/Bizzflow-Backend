@@ -22,7 +22,7 @@ const app = express();
 // --- MIDDLEWARES ---
 // Allow frontend to talk to backend and send cookies securely
 app.use(cors({
-  origin: 'http://localhost:5173', // Your Vite React App URL (Update if different)
+  origin: process.env.FRONTEND_URL, // Your Vite React App URL (Update if different)
   credentials: true
 })); 
 app.use(express.json()); 
