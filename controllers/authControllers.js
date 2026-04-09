@@ -60,16 +60,16 @@ export const loginUser = async (req, res) => {
 
 // --- LOGOUT USER ---
 export const logoutUser = async (req, res) => {
-  // Cookie ko expire karke logout karna
   res.status(200).cookie('token', null, {
     expires: new Date(Date.now()),
     httpOnly: true,
+    secure: true,        // <-- Yahan bhi add karna zaroori hai
+    sameSite: "none",    // <-- Yahan bhi add karna zaroori hai
   }).json({
     success: true,
     message: 'Logged out successfully'
   });
 };
-
 
 // --- GET LOGGED IN USER PROFILE ---
 export const getMyProfile = async (req, res) => {
