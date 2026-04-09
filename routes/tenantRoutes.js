@@ -1,12 +1,14 @@
 import express from 'express';
-import { createTenant, getTenants } from '../controllers/tenantController.js';
-import { isAuthenticated } from '../middlewares/auth.js';
+// YAHAN DEKHO: Maine 'getTenants' ko import list se hata diya hai 👇
+import { createTenant, getMyTenants } from '../controllers/tenantController.js';
+import { isAuthenticated } from '../middlewares/auth.js'; // Tumhara 'middlewares' folder ka naam sahi hai
 
 const router = express.Router();
 
 // Apply authentication middleware to all routes
-router.route('/')
+// YAHAN DHYAN DO: '/' ki jagah '/tenants' kar diya taaki frontend se match ho
+router.route('/tenants')
   .post(isAuthenticated, createTenant)
-  .get(isAuthenticated, getTenants);
+  .get(isAuthenticated, getMyTenants);
 
 export default router;
