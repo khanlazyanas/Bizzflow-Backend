@@ -24,14 +24,15 @@ const userSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Password save hone se pehle encrypt (hash) hoga
-userSchema.pre('save', async function(next) {
-  // Agar password change nahi hua hai, toh aage badho
-  if (!this.isModified('password')) return next();
+// ========================================================
+// 🛠️ YAHAN SE 'next' HATA DIYA GAYA HAI KUNKI ASYNC HAI
+// ========================================================
+userSchema.pre('save', async function() {
+  // Agar password change nahi hua hai, toh aage badho (return)
+  if (!this.isModified('password')) return;
   
   // 10 rounds of salt se hash karo (Secure)
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 // Password match karne ka method (Login ke time kaam aayega)
