@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 
 const tenantSchema = new mongoose.Schema({
-  name: {
+  // YAHAN DHYAN DO: 'businessName' hona chahiye, 'name' nahi
+  businessName: {
     type: String,
     required: [true, 'Business name is required']
   },
@@ -14,13 +15,7 @@ const tenantSchema = new mongoose.Schema({
     enum: ['Starter Plan', 'Pro Plan', 'Enterprise'],
     default: 'Starter Plan'
   },
-  status: {
-    type: String,
-    enum: ['Active', 'Pending', 'Suspended'],
-    default: 'Active'
-  },
-  // Link this tenant to the Admin who created it
-  user: {
+  adminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
