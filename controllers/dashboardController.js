@@ -5,30 +5,28 @@ import Invoice from '../models/Invoice.js';
 export const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user._id;
-
-    // 1. Frontend se range nikalna (7D, 30D, ya 6M). Default 7D rahega.
     const range = req.query.range || '7D';
 
-    // 2. Get Total Active Tenants (FIX: 'adminId' use kiya gaya hai)
+    // Get Total Active Tenants
     const activeTenants = await Tenant.countDocuments({ adminId: userId });
 
-    // 3. Get Total Revenue (Sum of Paid Invoices)
+    // Get Total Revenue (Sum of Paid Invoices)
     const paidInvoices = await Invoice.find({ user: userId, status: 'Paid' });
     const totalRevenue = paidInvoices.reduce((acc, inv) => acc + inv.amount, 0);
 
-    // 4. Get Unpaid Invoices Count
+    // Get Unpaid Invoices Count
     const unpaidInvoicesCount = await Invoice.countDocuments({ user: userId, status: { $in: ['Unpaid', 'Overdue'] } });
 
-    // 5. Calculate MRR (Monthly Recurring Revenue - simple mock calculation)
-    const mrr = activeTenants * 99; // Assuming average $99 per tenant
+    // Calculate MRR - Abhi ke liye 99 maan kar chal rahe hain, but later you can compute it properly
+    const mrr = activeTenants * 99; 
 
-    // 6. Get Recent Activity (FIX: populate mein 'businessName' aayega)
+    // Get Recent Activity
     const recentInvoices = await Invoice.find({ user: userId })
       .populate('tenant', 'businessName')
       .sort({ createdAt: -1 })
       .limit(4);
 
-    // 7. Graph/Chart Data Logic (Range ke hisaab se data bhejna)
+    // Chart Data mapping (Will be replaced with real aggregation logic as app scales)
     let chartData = [];
     if (range === '7D') {
       chartData = [
@@ -50,7 +48,6 @@ export const getDashboardStats = async (req, res) => {
       ];
     }
 
-    // 8. Final Response Bhejna
     res.status(200).json({
       success: true,
       stats: {
@@ -60,7 +57,7 @@ export const getDashboardStats = async (req, res) => {
         mrr
       },
       recentActivity: recentInvoices,
-      chartData // Yahan chart ka data frontend ko bhej diya
+      chartData
     });
 
   } catch (error) {
