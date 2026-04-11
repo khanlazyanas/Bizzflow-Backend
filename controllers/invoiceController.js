@@ -17,8 +17,8 @@ export const createInvoice = async (req, res) => {
       user: req.user._id // Attach the logged-in user's ID
     });
 
-    // Populate tenant details before sending response
-    await invoice.populate('tenant', 'name ownerName');
+    // FIX: Populate tenant details before sending response ('name' ki jagah 'businessName')
+    await invoice.populate('tenant', 'businessName ownerName');
 
     res.status(201).json({ success: true, invoice });
   } catch (error) {
@@ -29,9 +29,9 @@ export const createInvoice = async (req, res) => {
 // --- GET ALL INVOICES ---
 export const getInvoices = async (req, res) => {
   try {
-    // Fetch invoices and populate tenant details
+    // FIX: Fetch invoices and populate tenant details ('name' ki jagah 'businessName')
     const invoices = await Invoice.find({ user: req.user._id })
-      .populate('tenant', 'name')
+      .populate('tenant', 'businessName')
       .sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, count: invoices.length, invoices });

@@ -6,8 +6,8 @@ export const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // 1. Get Total Active Tenants
-    const activeTenants = await Tenant.countDocuments({ user: userId, status: 'Active' });
+    // FIX: 'user' ki jagah 'adminId' use kiya, aur 'status' hata diya kyunki Tenant model mein nahi hai.
+    const activeTenants = await Tenant.countDocuments({ adminId: userId });
 
     // 2. Get Total Revenue (Sum of Paid Invoices)
     const paidInvoices = await Invoice.find({ user: userId, status: 'Paid' });
@@ -19,9 +19,9 @@ export const getDashboardStats = async (req, res) => {
     // 4. Calculate MRR (Monthly Recurring Revenue - simple mock calculation)
     const mrr = activeTenants * 99; // Assuming average $99 per tenant
 
-    // 5. Get Recent Activity (Last 4 invoices/tenants)
+    // FIX: populate mein 'name' ki jagah 'businessName' aayega
     const recentInvoices = await Invoice.find({ user: userId })
-      .populate('tenant', 'name')
+      .populate('tenant', 'businessName')
       .sort({ createdAt: -1 })
       .limit(4);
 
