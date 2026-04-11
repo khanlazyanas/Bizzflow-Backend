@@ -40,3 +40,29 @@ export const getMyTenants = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
+
+
+export const deleteTenant = async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.id);
+
+    if (!tenant) {
+      return res.status(404).json({ success: false, message: 'Tenant not found' });
+    }
+
+    // Security Check: Sirf wahi admin delete kar sake jisne banaya hai
+    if (tenant.adminId.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+
+    await tenant.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Tenant deleted successfully'
+    });
+  } catch (error) {
+    console.log("Error in deleteTenant:", error.message);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
