@@ -10,5 +10,6 @@ router.route('/')
   .get(isAuthenticated, getMyTenants);
   router.route('/:id')
   .delete(isAuthenticated, deleteTenant);
+  
 
 export default router;
