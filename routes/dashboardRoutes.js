@@ -4,6 +4,7 @@ import { isAuthenticated } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-router.get('/', isAuthenticated, getDashboardStats);
+// YAHAN FIX KIYA HAI: '/' ki jagah '/stats' aayega
+router.get('/stats', isAuthenticated, getDashboardStats);
 
 export default router;
