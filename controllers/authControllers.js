@@ -71,11 +71,24 @@ export const logoutUser = async (req, res) => {
   });
 };
 
+
+
 // --- GET LOGGED IN USER PROFILE ---
 export const getMyProfile = async (req, res) => {
-  // Yahan req.user hume hamare 'isAuthenticated' middleware se milega
-  res.status(200).json({
-    success: true,
-    user: req.user
-  });
+  try {
+    // Middleware se id mili, us id se database se pura user (with fullName) utha lo.
+    // .select('-password') ensure karega ki password hash fetch na ho
+    const user = await User.findById(req.user._id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: user // Is user object mein ab pakka 'fullName' hoga
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
