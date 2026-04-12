@@ -1,26 +1,26 @@
 import jwt from 'jsonwebtoken';
 
 export const sendCookie = (user, statusCode, res, message) => {
-  // 1. Token yahin generate karo
+  // 1. Token generate
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: '15d', // Token 15 din tak chalega
+    expiresIn: '15d', 
   });
 
-  // 2. CHROME SECURITY BYPASS OPTIONS 
+  // 2. Cookie Options
   const options = {
-    expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days
+    expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), 
     httpOnly: true,
-    secure: true,        // <-- ZAROORI HAI: Sirf HTTPS (Render) par chalega
-    sameSite: "none",    // <-- ZAROORI HAI: Cross-origin allow karega
+    secure: true,        
+    sameSite: "none",    
   };
 
-  // 3. SECURITY FIX: Password hash ko frontend me bhejne se roko!
+  // 3. Password hata do
   user.password = undefined;
 
-  // 4. Cookie set karo aur response bhejo
+  // 4. Send Response
   res.status(statusCode).cookie("token", token, options).json({
     success: true,
     message,
-    user, // Ab user object ke andar 'fullName' aayega, bina password ke
+    user, // FIX: Frontend ko ye user data yahan se milega
   });
 };
