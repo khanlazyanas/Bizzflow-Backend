@@ -80,3 +80,32 @@ export const getMyProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+// --- UPDATE USER PROFILE ---
+export const updateProfile = async (req, res) => {
+  try {
+    const { fullName, email } = req.body;
+
+    // Email already in use check
+    const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Email is already taken by another user.' });
+    }
+
+    // Database me user update karo
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { fullName, email },
+      { new: true, runValidators: true } // naya updated document return karega
+    ).select('-password');
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
