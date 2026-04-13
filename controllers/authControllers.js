@@ -85,19 +85,24 @@ export const getMyProfile = async (req, res) => {
 // --- UPDATE USER PROFILE ---
 export const updateProfile = async (req, res) => {
   try {
-    const { fullName, email } = req.body;
+    const { fullName, email, avatar } = req.body;
 
-    // Email already in use check
+    // Check if new email is already taken
     const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email is already taken by another user.' });
     }
 
-    // Database me user update karo
+    // Database me update karne wala data
+    const updateData = { fullName, email };
+    if (avatar) {
+      updateData.avatar = avatar; // Agar user ne nayi photo bheji hai, toh add karo
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
-      { fullName, email },
-      { new: true, runValidators: true } // naya updated document return karega
+      updateData,
+      { new: true, runValidators: true } 
     ).select('-password');
 
     res.status(200).json({

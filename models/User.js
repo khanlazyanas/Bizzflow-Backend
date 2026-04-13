@@ -21,6 +21,11 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Password is required'],
     minlength: [8, 'Password must be at least 8 characters'],
     select: false // Normal queries mein password leak na ho isliye
+  },
+  // FIX: Ye nayi line add ki gayi hai Avatar save karne ke liye 👇
+  avatar: {
+    type: String,
+    default: ""
   }
 }, { timestamps: true });
 
