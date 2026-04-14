@@ -62,3 +62,38 @@ export const deleteInvoice = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
+
+// --- UPDATE INVOICE STATUS (MARK AS PAID) ---
+export const updateInvoiceStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const invoice = await Invoice.findById(id);
+
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+
+    // Security Check: Ensure the logged-in user owns this invoice before updating
+    if (invoice.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ success: false, message: 'Not authorized to update this invoice' });
+    }
+
+    // Status update karo aur save karo
+    invoice.status = status;
+    await invoice.save();
+
+    // Frontend ko naya tenant data bhi chahiye hota hai UI update ke liye
+    await invoice.populate('tenant', 'businessName ownerName');
+
+    res.status(200).json({
+      success: true,
+      message: 'Invoice status updated successfully',
+      invoice
+    });
+  } catch (error) {
+    console.log("Error in updateInvoiceStatus:", error.message);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
