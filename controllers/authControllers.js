@@ -65,7 +65,7 @@ export const logoutUser = async (req, res) => {
 // --- GET LOGGED IN USER PROFILE ---
 export const getMyProfile = async (req, res) => {
   try {
-    // FIX: Database se poora user fetch karo taaki 'fullName' aa jaye
+    // Database se poora user fetch karo taaki 'fullName' aa jaye
     const user = await User.findById(req.user._id).select('-password');
     
     if (!user) {
@@ -81,7 +81,6 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
-
 // --- UPDATE USER PROFILE ---
 export const updateProfile = async (req, res) => {
   try {
@@ -96,7 +95,7 @@ export const updateProfile = async (req, res) => {
     // Database me update karne wala data
     const updateData = { fullName, email };
     if (avatar) {
-      updateData.avatar = avatar; // Agar user ne nayi photo bheji hai, toh add karo
+      updateData.avatar = avatar; 
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -109,6 +108,46 @@ export const updateProfile = async (req, res) => {
       success: true,
       message: 'Profile updated successfully',
       user: updatedUser
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// --- PRO FEATURE: CHANGE PASSWORD ---
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Please provide both current and new passwords.' });
+    }
+
+    // Database se user nikalenge aur .select('+password') lagayenge kyunki normally password hidden hota hai
+    const user = await User.findById(req.user._id).select('+password');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    // 1. Check if current password is correct
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Incorrect current password.' });
+    }
+
+    // 2. Check if new password is same as old
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ success: false, message: 'New password cannot be the same as the old password.' });
+    }
+
+    // 3. Update to new password aur .save() lagayenge taaki bcrypt hash kaam kare
+    user.password = newPassword;
+    await user.save(); 
+
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully! Keep it safe. 🔒'
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
