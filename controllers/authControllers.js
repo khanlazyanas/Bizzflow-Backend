@@ -1,8 +1,17 @@
 import User from '../models/User.js';
 import { sendCookie } from '../utils/sendCookie.js';
-// FIX: Ye dono nayi lines add ki hain Forgot/Reset password ke liye
 import { sendEmail } from '../utils/sendEmail.js'; 
 import crypto from 'crypto'; 
+import { v2 as cloudinary } from 'cloudinary';
+import DataURIParser from 'datauri/parser.js';
+import path from 'path';
+
+// --- CLOUDINARY CONFIGURATION ---
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // --- REGISTER USER ---
 export const registerUser = async (req, res) => {
@@ -68,7 +77,6 @@ export const logoutUser = async (req, res) => {
 // --- GET LOGGED IN USER PROFILE ---
 export const getMyProfile = async (req, res) => {
   try {
-    // Database se poora user fetch karo taaki 'fullName' aa jaye
     const user = await User.findById(req.user._id).select('-password');
     
     if (!user) {
@@ -84,10 +92,10 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
-// --- UPDATE USER PROFILE ---
+// --- UPDATE USER PROFILE (WITH CLOUDINARY UPLOAD) ---
 export const updateProfile = async (req, res) => {
   try {
-    const { fullName, email, avatar } = req.body;
+    const { fullName, email } = req.body;
 
     // Check if new email is already taken
     const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
@@ -95,10 +103,22 @@ export const updateProfile = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email is already taken by another user.' });
     }
 
-    // Database me update karne wala data
     const updateData = { fullName, email };
-    if (avatar) {
-      updateData.avatar = avatar; 
+
+    // 🔥 PRO FEATURE: CLOUDINARY IMAGE UPLOAD LOGIC
+    if (req.file) {
+      const parser = new DataURIParser();
+      const extName = path.extname(req.file.originalname).toString();
+      const file64 = parser.format(extName, req.file.buffer);
+
+      const cloudinaryResponse = await cloudinary.uploader.upload(file64.content, {
+        folder: 'bizflow_avatars', // Cloudinary me is folder me save hoga
+        crop: "fill",
+        gravity: "face"
+      });
+
+      // Jo URL cloud se aaya wo database ke liye save kar lo
+      updateData.avatar = cloudinaryResponse.secure_url; 
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -126,25 +146,21 @@ export const changePassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide both current and new passwords.' });
     }
 
-    // Database se user nikalenge aur .select('+password') lagayenge kyunki normally password hidden hota hai
     const user = await User.findById(req.user._id).select('+password');
     
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    // 1. Check if current password is correct
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Incorrect current password.' });
     }
 
-    // 2. Check if new password is same as old
     if (currentPassword === newPassword) {
       return res.status(400).json({ success: false, message: 'New password cannot be the same as the old password.' });
     }
 
-    // 3. Update to new password aur .save() lagayenge taaki bcrypt hash kaam kare
     user.password = newPassword;
     await user.save(); 
 
@@ -158,7 +174,7 @@ export const changePassword = async (req, res) => {
 };
 
 // =======================================================
-// 🔥 NAYE FEATURES: FORGOT & RESET PASSWORD
+// 🔥 FORGOT & RESET PASSWORD
 // =======================================================
 
 // --- FORGOT PASSWORD (SEND EMAIL) ---
@@ -169,15 +185,12 @@ export const forgotPassword = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found with this email' });
     }
 
-    // 1. Token Generate karo (ye model me banaya tha)
     const resetToken = user.getResetPasswordToken();
     await user.save({ validateBeforeSave: false });
 
-    // 2. Email ka URL banao (Frontend ka path, jahan user click karke jayega)
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
-    // 3. Email ka design (Professional HTML look)
     const message = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #27272a; border-radius: 16px; overflow: hidden; background-color: #000;">
         <div style="background-color: #09090b; padding: 30px; text-align: center; border-bottom: 1px solid #27272a;">
@@ -203,7 +216,6 @@ export const forgotPassword = async (req, res) => {
 
       res.status(200).json({ success: true, message: `Recovery email sent to ${user.email}` });
     } catch (error) {
-      // Agar email bhejte waqt server crash ho/net na chale, toh token hata do
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
       await user.save({ validateBeforeSave: false });
@@ -217,32 +229,27 @@ export const forgotPassword = async (req, res) => {
 // --- RESET PASSWORD (UPDATE DB FROM EMAIL LINK) ---
 export const resetPassword = async (req, res) => {
   try {
-    // 1. URL se aane wale token ko wapas hash karo, kyunki DB mein hashed version save hua tha
     const resetPasswordToken = crypto
       .createHash('sha256')
       .update(req.params.token)
       .digest('hex');
 
-    // 2. User dhundho jiska hashed token match kare aur uski expiry limit (15 mins) abhi bachi ho
     const user = await User.findOne({
       resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() }, // $gt matlab Greater Than current time
+      resetPasswordExpire: { $gt: Date.now() }, 
     });
 
     if (!user) {
       return res.status(400).json({ success: false, message: 'Reset Token is invalid or has expired.' });
     }
 
-    // 3. User mil gaya toh naya password set karo
     user.password = req.body.password;
     
-    // 4. Token ka kaam khatam, unko wapas undefined (khali) kardo
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     
     await user.save();
 
-    // 5. Password badalte hi automatically user ko login karwa do (Cookie send karke)
     sendCookie(user, 200, res, 'Password reset successful! Welcome back.');
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
