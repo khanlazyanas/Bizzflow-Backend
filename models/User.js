@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto'; // FIX: Ye nayi line add ki hai password reset token ke liye
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
   fullName: {
@@ -28,7 +28,13 @@ const userSchema = new mongoose.Schema({
     default: ""
   },
   
-  // FIX: Ye 2 nayi lines add ki gayi hain Forgot Password ke liye 👇
+  // 🔥 FIX: Ye naya field add kiya hai Pro accounts ke liye 👇
+  isPro: {
+    type: Boolean,
+    default: false // By default har naya user free (false) hoga
+  },
+  
+  // Forgot Password fields
   resetPasswordToken: String,
   resetPasswordExpire: Date,
 
@@ -51,7 +57,7 @@ userSchema.methods.comparePassword = async function(enteredPassword) {
 };
 
 // ========================================================
-// FIX: Naya method password reset token generate karne ke liye 👇
+// Naya method password reset token generate karne ke liye
 // ========================================================
 userSchema.methods.getResetPasswordToken = function () {
   // 1. Ek random token banayein (20 bytes ka hex string)
