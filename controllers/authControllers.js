@@ -255,3 +255,13 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const isProUser = (req, res, next) => {
+  if (!req.user.isPro) {
+    return res.status(403).json({ 
+      success: false, 
+      message: "Please upgrade to Pro to access this feature!" 
+    });
+  }
+  next();
+};

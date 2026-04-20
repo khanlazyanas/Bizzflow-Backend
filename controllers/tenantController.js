@@ -1,15 +1,30 @@
 import Tenant from '../models/Tenant.js';
 
+// ==========================================
+// 1. CREATE TENANT (With Pro Limit Logic)
+// ==========================================
 export const createTenant = async (req, res) => {
   try {
-    // Yahan frontend se businessName nikal rahe hain
     const { businessName, ownerName, plan } = req.body;
 
-    // Validation check taaki khali data na jaye
+    // Validation check
     if (!businessName || !ownerName) {
       return res.status(400).json({ success: false, message: "Please fill all details" });
     }
 
+    // 🔥 LIMIT CHECK LOGIC
+    // Pehle check karo is admin ne kitne tenant banaye hain
+    const tenantCount = await Tenant.countDocuments({ adminId: req.user._id });
+
+    // Agar user Pro nahi hai aur limit 5 ya usse zyada hai, toh rok do
+    if (!req.user.isPro && tenantCount >= 5) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Free plan limit reached! Upgrade to add unlimited tenants." 
+      });
+    }
+
+    // Agar sab theek hai toh naya tenant bana do
     const tenant = await Tenant.create({
       businessName,
       ownerName,
@@ -27,6 +42,10 @@ export const createTenant = async (req, res) => {
   }
 };
 
+
+// ==========================================
+// 2. GET MY TENANTS
+// ==========================================
 export const getMyTenants = async (req, res) => {
   try {
     const tenants = await Tenant.find({ adminId: req.user._id }).sort({ createdAt: -1 });
@@ -42,6 +61,9 @@ export const getMyTenants = async (req, res) => {
 };
 
 
+// ==========================================
+// 3. DELETE TENANT
+// ==========================================
 export const deleteTenant = async (req, res) => {
   try {
     const tenant = await Tenant.findById(req.params.id);
