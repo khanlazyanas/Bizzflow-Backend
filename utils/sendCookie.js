@@ -6,15 +6,18 @@ export const sendCookie = (user, statusCode, res, message) => {
     expiresIn: '15d', 
   });
 
-  // Cookie options
+  // 🔥 FIX: Environment ke hisaab se cookie ki security set karo
+  // Agar laptop par ho toh development, server par ho toh production
+  const isProduction = process.env.NODE_ENV === 'production';
+
   const options = {
     expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), 
     httpOnly: true,
-    secure: true,      
-    sameSite: "none",  
+    secure: isProduction,                      // Localhost pe false, Server pe true
+    sameSite: isProduction ? "none" : "lax",   // Localhost pe "lax", Server pe "none"
   };
 
-  // FIX: Password ko null karke User data ko frontend me bhej do
+  // Password ko remove karke User data ko frontend me bhej do
   user.password = undefined;
 
   res.status(statusCode).cookie("token", token, options).json({
