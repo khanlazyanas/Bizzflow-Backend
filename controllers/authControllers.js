@@ -97,7 +97,6 @@ export const updateProfile = async (req, res) => {
   try {
     const { fullName, email } = req.body;
 
-    // Check if new email is already taken
     const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email is already taken by another user.' });
@@ -105,19 +104,17 @@ export const updateProfile = async (req, res) => {
 
     const updateData = { fullName, email };
 
-    // 🔥 PRO FEATURE: CLOUDINARY IMAGE UPLOAD LOGIC
     if (req.file) {
       const parser = new DataURIParser();
       const extName = path.extname(req.file.originalname).toString();
       const file64 = parser.format(extName, req.file.buffer);
 
       const cloudinaryResponse = await cloudinary.uploader.upload(file64.content, {
-        folder: 'bizflow_avatars', // Cloudinary me is folder me save hoga
+        folder: 'bizflow_avatars', 
         crop: "fill",
         gravity: "face"
       });
 
-      // Jo URL cloud se aaya wo database ke liye save kar lo
       updateData.avatar = cloudinaryResponse.secure_url; 
     }
 
@@ -173,11 +170,7 @@ export const changePassword = async (req, res) => {
   }
 };
 
-// =======================================================
-// 🔥 FORGOT & RESET PASSWORD
-// =======================================================
-
-// --- FORGOT PASSWORD (SEND EMAIL) ---
+// --- FORGOT PASSWORD ---
 export const forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -191,7 +184,7 @@ export const forgotPassword = async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
-    const message = `
+    const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #27272a; border-radius: 16px; overflow: hidden; background-color: #000;">
         <div style="background-color: #09090b; padding: 30px; text-align: center; border-bottom: 1px solid #27272a;">
           <h1 style="color: #fff; margin: 0; font-size: 28px; letter-spacing: -1px;">BizFlow<span style="color: #4f46e5;">.</span></h1>
@@ -208,10 +201,11 @@ export const forgotPassword = async (req, res) => {
     `;
 
     try {
+      // Adjusted to use 'html' inside your new sendEmail function
       await sendEmail({
         email: user.email,
         subject: 'BizFlow - Secure Password Recovery',
-        message,
+        html,
       });
 
       res.status(200).json({ success: true, message: `Recovery email sent to ${user.email}` });
@@ -226,7 +220,7 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-// --- RESET PASSWORD (UPDATE DB FROM EMAIL LINK) ---
+// --- RESET PASSWORD ---
 export const resetPassword = async (req, res) => {
   try {
     const resetPasswordToken = crypto
@@ -264,4 +258,76 @@ export const isProUser = (req, res, next) => {
     });
   }
   next();
+};
+
+// =======================================================
+// 🔥 NAYA FEATURE: MAGIC LINK / OTP LOGIN LOGIC
+// =======================================================
+
+// --- SEND LOGIN OTP ---
+export const sendLoginOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Email is required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, message: "User not found. Please register first." });
+
+    // 6-digit random OTP generate karo
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // OTP ko database me save karo (10 mins expiry ke sath)
+    user.loginOtp = otp;
+    user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save({ validateBeforeSave: false }); // Validate check skip kiya taaki baaki validation error na de
+
+    // Premium HTML Email Template
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; text-align: center; padding: 40px 20px; background-color: #050505; color: #ffffff; border-radius: 10px;">
+        <h2 style="color: #ffffff; font-weight: 800; margin-bottom: 5px;">Log in to BizFlow</h2>
+        <p style="color: #a1a1aa; font-size: 16px;">Here is your secure login code:</p>
+        <div style="background-color: #18181b; padding: 20px; border-radius: 10px; margin: 30px auto; width: fit-content; border: 1px solid #3f3f46;">
+          <h1 style="font-size: 40px; letter-spacing: 12px; margin: 0; color: #4f46e5;">${otp}</h1>
+        </div>
+        <p style="color: #71717a; font-size: 12px;">This code will expire in 10 minutes. If you didn't request this, safely ignore this email.</p>
+      </div>
+    `;
+
+    await sendEmail({
+      email: user.email,
+      subject: "BizFlow - Your Secure Login Code",
+      html: emailHtml
+    });
+
+    res.status(200).json({ success: true, message: "OTP sent to your email successfully!" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// --- VERIFY OTP & LOGIN ---
+export const verifyOtpLogin = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) return res.status(400).json({ success: false, message: "Email and OTP are required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // OTP aur Expiry Check karo
+    if (user.loginOtp !== otp || user.loginOtpExpire < Date.now()) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP code" });
+    }
+
+    // OTP Sahi hai -> Purana OTP delete kar do
+    user.loginOtp = undefined;
+    user.loginOtpExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    // Cookie generate karke login kara do
+    sendCookie(user, 200, res, `Welcome back via Magic Code, ${user.fullName}!`);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
