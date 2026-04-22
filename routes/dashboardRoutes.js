@@ -1,10 +1,13 @@
 import express from 'express';
-import { getDashboardStats } from '../controllers/dashboardController.js';
+import { getDashboardStats, exportDashboardData } from '../controllers/dashboardController.js';
 import { isAuthenticated } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-// YAHAN FIX KIYA HAI: '/' ki jagah '/stats' aayega
+// Dashboard stats route
 router.get('/stats', isAuthenticated, getDashboardStats);
+
+// 🔥 NAYA ROUTE: Excel/CSV Export ke liye
+router.get('/export', isAuthenticated, exportDashboardData);
 
 export default router;

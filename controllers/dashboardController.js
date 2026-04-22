@@ -98,3 +98,39 @@ export const getDashboardStats = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// =======================================================
+// 🔥 NAYA FEATURE: EXPORT DATA TO CSV/EXCEL
+// =======================================================
+export const exportDashboardData = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    // Database se saari invoices fetch karo
+    const allInvoices = await Invoice.find({ user: userId }).populate('tenant', 'businessName');
+
+    // CSV File ke Headers (Columns)
+    let csv = 'Invoice Number,Tenant Name,Amount ($),Status,Due Date,Created At\n';
+
+    // Har invoice ko ek row mein convert karo
+    allInvoices.forEach(inv => {
+      const tenantName = inv.tenant ? inv.tenant.businessName : 'Unknown';
+      const amount = inv.amount;
+      const status = inv.status;
+      const dueDate = new Date(inv.dueDate).toLocaleDateString('en-US');
+      const createdAt = new Date(inv.createdAt).toLocaleDateString('en-US');
+
+      // Names ke aaspas quotes ("") lagaye hain taaki comma (,) aane par column break na ho
+      csv += `"${inv.invoiceNumber || 'N/A'}","${tenantName}",${amount},"${status}","${dueDate}","${createdAt}"\n`;
+    });
+
+    // Browser ko batao ki ye ek CSV file download karni hai
+    res.header('Content-Type', 'text/csv');
+    res.header('Content-Disposition', 'attachment; filename="BizFlow_Revenue_Report.csv"');
+    
+    res.status(200).send(csv);
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
