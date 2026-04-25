@@ -1,11 +1,30 @@
 import Tenant from '../models/Tenant.js';
 import Invoice from '../models/Invoice.js';
+import redisClient from '../utils/redis.js'; // 🔥 REDIS IMPORT 
 
-// --- GET DASHBOARD ANALYTICS ---
+// --- GET DASHBOARD ANALYTICS (WITH REDIS CACHE) ---
 export const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user._id;
+    const userIdStr = userId.toString(); // Redis key ke liye string format
     const range = req.query.range || '7D';
+
+    // 🔥 1. REDIS CACHE KEY BANAYI
+    const cacheKey = `dashboard_stats_${userIdStr}_${range}`;
+
+    // 🔥 2. CHECK CACHE (Agar data Redis mein hai toh 0.1s mein wahi se bhej do)
+    try {
+      const cachedData = await redisClient.get(cacheKey);
+      if (cachedData) {
+        console.log(`⚡ Serving Dashboard for Range: ${range} from Redis Cache`);
+        return res.status(200).json(JSON.parse(cachedData));
+      }
+    } catch (cacheError) {
+      console.error("Redis Get Error:", cacheError);
+      // Agar Redis fail bhi ho jaye, toh app crash nahi hoga, aage MongoDB se data le aayega
+    }
+
+    console.log(`🗄️ Serving Dashboard for Range: ${range} from MongoDB`);
 
     // 1. Get Total Active Tenants
     const activeTenants = await Tenant.countDocuments({ adminId: userId });
@@ -77,8 +96,8 @@ export const getDashboardStats = async (req, res) => {
       chartData = months.map(m => ({ name: m, rev: chartDataMap[m] || 0 }));
     }
 
-    // 6. Send Response
-    res.status(200).json({
+    // 🔥 6. FINAL RESPONSE DATA TAIYAR KIYA
+    const responseData = {
       success: true,
       stats: {
         totalRevenue,
@@ -92,7 +111,18 @@ export const getDashboardStats = async (req, res) => {
       },
       recentActivity,
       chartData
-    });
+    };
+
+    // 🔥 7. SAVE TO REDIS (Agli baar ke liye save kar lo - Expiry 5 mins)
+    try {
+      // 300 seconds = 5 minutes tak data cache mein rahega
+      await redisClient.setEx(cacheKey, 300, JSON.stringify(responseData)); 
+    } catch (cacheError) {
+      console.error("Redis Set Error:", cacheError);
+    }
+
+    // 8. Send Response
+    res.status(200).json(responseData);
 
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -100,7 +130,7 @@ export const getDashboardStats = async (req, res) => {
 };
 
 // =======================================================
-// 🔥 NAYA FEATURE: EXPORT DATA TO CSV/EXCEL
+// 🔥 EXPORT DATA TO CSV/EXCEL
 // =======================================================
 export const exportDashboardData = async (req, res) => {
   try {
