@@ -4,8 +4,9 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import helmet from 'helmet'; // 🔥 NAYA IMPORT: Security shield
+import helmet from 'helmet'; // 🔥 Security shield
 import connectDB from './config/database.js'; 
+import startAutomation from './utils/automation.js'; // 🔥 NAYA IMPORT: Cron Job Automation
 
 import authRoutes from './routes/authRoutes.js';
 import tenantRoutes from './routes/tenantRoutes.js';
@@ -18,7 +19,7 @@ connectDB();
 
 const app = express();
 
-// 🔥 NAYI LINE: App ki security ON
+// App ki security ON
 app.use(helmet()); 
 
 app.use(cors({
@@ -30,6 +31,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser()); 
+
+// 🔥 NAYI LINE: Automation Background Engine Start kar diya
+startAutomation();
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
@@ -43,5 +47,5 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT} and Automation is Active! 🤖`);
 });
