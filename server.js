@@ -4,6 +4,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet'; // 🔥 NAYA IMPORT: Security shield
 import connectDB from './config/database.js'; 
 
 import authRoutes from './routes/authRoutes.js';
@@ -16,6 +17,9 @@ import paymentRoutes from './routes/paymentRoutes.js';
 connectDB();
 
 const app = express();
+
+// 🔥 NAYI LINE: App ki security ON
+app.use(helmet()); 
 
 app.use(cors({
   origin: process.env.FRONTEND_URL, 
