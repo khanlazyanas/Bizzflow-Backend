@@ -5,6 +5,10 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet'; // 🔥 Security shield
+import session from 'express-session'; // 🔥 NAYA IMPORT: Session
+import passport from 'passport'; // 🔥 NAYA IMPORT: Passport
+import './utils/passport.js'; // 🔥 NAYA IMPORT: Google Engine load karo
+
 import connectDB from './config/database.js'; 
 import startAutomation from './utils/automation.js'; // 🔥 NAYA IMPORT: Cron Job Automation
 
@@ -31,6 +35,15 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser()); 
+
+// 🔥 NAYA CODE: Session & Passport setup (Google Login ke liye zaroori)
+app.use(session({
+  secret: process.env.SESSION_SECRET || "bizflow_secret",
+  resave: false,
+  saveUninitialized: false,
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // 🔥 NAYI LINE: Automation Background Engine Start kar diya
 startAutomation();
