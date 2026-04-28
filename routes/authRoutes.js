@@ -1,7 +1,7 @@
 import express from 'express';
-import rateLimit from 'express-rate-limit'; // 🔥 NAYA IMPORT: Rate Limiter
-import passport from 'passport'; // 🔥 NAYA IMPORT: Google Auth ke liye
-import jwt from 'jsonwebtoken'; // 🔥 NAYA IMPORT: Token banane ke liye
+import rateLimit from 'express-rate-limit'; 
+import passport from 'passport'; 
+import jwt from 'jsonwebtoken'; 
 import { 
   registerUser, 
   loginUser, 
@@ -32,16 +32,16 @@ const authLimiter = rateLimit({
   }
 });
 
-// Normal Email/Password Auth (Limiter Laga Diya)
+// Normal Email/Password Auth 
 router.post('/register', authLimiter, registerUser);
 router.post('/login', authLimiter, loginUser);
 
-// 🔥 Naya Feature: OTP Auth Routes (Yahan bhi Limiter Laga Diya taaki email spam na ho)
+// OTP Auth Routes
 router.post('/send-otp', authLimiter, sendLoginOtp);
 router.post('/verify-otp', authLimiter, verifyOtpLogin);
 
 // =========================================================
-// 🔥 NAYA FEATURE: GOOGLE OAUTH ROUTES
+// 🔥 GOOGLE OAUTH ROUTES (100% FIXED)
 // =========================================================
 // 1. Ye route frontend par button click hone pe chalega
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -50,19 +50,21 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 router.get('/google/callback', 
   passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL}/login` }),
   (req, res) => {
-    // Agar login successful hai, toh JWT token banao aur cookie me bhej do
+    // JWT token banao
     const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRE || '7d'
     });
 
+    // 🔥 100% FIX: Hardcoded SameSite 'none' & secure 'true' 
+    // Isse browser kabhi bhi Vercel par cookie block nahi karega!
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+      secure: true,      // Hamesha True (Render/Vercel ke liye)
+      sameSite: 'none'   // Hamesha None (Cross-domain ke liye)
     });
 
     // Frontend ke dashboard par redirect kar do
-    res.redirect(`${process.env.FRONTEND_URL}/`); 
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard`); // 🔥 Yahan /dashboard explicitly lagaya hai taaki seedha andar jaye
   }
 );
 // =========================================================
@@ -74,7 +76,7 @@ router.put('/update', isAuthenticated, singleUpload, updateProfile);
 
 // Password Management
 router.put('/change-password', isAuthenticated, changePassword);
-router.post('/password/forgot', authLimiter, forgotPassword); // Forgot password pe bhi limiter zaroori hai
+router.post('/password/forgot', authLimiter, forgotPassword); 
 router.put('/password/reset/:token', resetPassword);
 
 // Features

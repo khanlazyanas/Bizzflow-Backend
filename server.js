@@ -4,13 +4,13 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import helmet from 'helmet'; // 🔥 Security shield
-import session from 'express-session'; // 🔥 NAYA IMPORT: Session
-import passport from 'passport'; // 🔥 NAYA IMPORT: Passport
-import './utils/passport.js'; // 🔥 NAYA IMPORT: Google Engine load karo
+import helmet from 'helmet'; 
+import session from 'express-session'; 
+import passport from 'passport'; 
+import './utils/passport.js'; 
 
 import connectDB from './config/database.js'; 
-import startAutomation from './utils/automation.js'; // 🔥 NAYA IMPORT: Cron Job Automation
+import startAutomation from './utils/automation.js'; 
 
 import authRoutes from './routes/authRoutes.js';
 import tenantRoutes from './routes/tenantRoutes.js';
@@ -22,6 +22,9 @@ import paymentRoutes from './routes/paymentRoutes.js';
 connectDB();
 
 const app = express();
+
+// 🔥 100% FIX 1: Render proxy ko trust karne ke liye (Vercel se connect hone ke liye zaroori)
+app.set("trust proxy", 1);
 
 // App ki security ON
 app.use(helmet()); 
@@ -36,12 +39,18 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser()); 
 
-// 🔥 NAYA CODE: Session & Passport setup (Google Login ke liye zaroori)
+// 🔥 100% FIX 2: Session Cookie Settings Update (Taki browser Render ki cookie Vercel par block na kare)
 app.use(session({
   secret: process.env.SESSION_SECRET || "bizflow_secret",
   resave: false,
   saveUninitialized: false,
+  cookie: {
+    secure: true,        // Hamesha HTTPS/Live ke liye
+    sameSite: 'none',    // Alag-alag domain (Render -> Vercel) ke liye MUST hai
+    maxAge: 24 * 60 * 60 * 1000 // 1 Day
+  }
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
