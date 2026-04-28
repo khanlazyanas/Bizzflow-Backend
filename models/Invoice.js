@@ -30,7 +30,20 @@ const invoiceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  
+  // ==========================================
+  // 🔥 NAYA FEATURE: Soft Delete (Recycle Bin)
+  // ==========================================
+  isDeleted: {
+    type: Boolean,
+    default: false // By default koi bhi invoice deleted nahi hoga
+  },
+  deletedAt: {
+    type: Date,
+    default: null // Jab delete hoga, tab yahan date aayegi
   }
+
 }, { timestamps: true });
 
 export default mongoose.model('Invoice', invoiceSchema);
