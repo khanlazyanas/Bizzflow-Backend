@@ -20,16 +20,17 @@ passport.use(new GoogleStrategy({
          }
          return done(null, user);
       } else {
-         // Naya user create karo (Google se details utha kar)
+         // 🔥 FIX YAHAN HAI: 'name' ki jagah 'fullName' likhna zaroori hai!
          const newUser = await User.create({
-            name: profile.displayName,
+            fullName: profile.displayName,  // <--- YAHAN FIX KIYA HAI
             email: profile.emails[0].value,
             googleId: profile.id,
-            // avatar: profile.photos[0].value // Agar avatar store karte ho toh
+            avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : "" // Google wali photo bhi save hogi
          });
          return done(null, newUser);
       }
     } catch (error) {
+      console.log("❌ Passport Error: ", error);
       return done(error, null);
     }
   }
