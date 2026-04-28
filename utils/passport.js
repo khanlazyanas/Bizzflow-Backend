@@ -5,27 +5,27 @@ import User from '../models/User.js';
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "/api/auth/google/callback"
+    // 🔥 100% FIX 1: Yahan humne pura exact Live URL hardcode kar diya hai
+    callbackURL: "https://bizzflow-backend.onrender.com/api/auth/google/callback",
+    // 🔥 100% FIX 2: Render jaise cloud servers ke liye ye line likhna zaroori hai
+    proxy: true 
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      // Check karo agar user pehle se database me hai
       let user = await User.findOne({ email: profile.emails[0].value });
 
       if (user) {
-         // Agar user purana hai par Google ID nahi hai, toh ID save kar lo
          if(!user.googleId) {
              user.googleId = profile.id;
              await user.save();
          }
          return done(null, user);
       } else {
-         // 🔥 FIX YAHAN HAI: 'name' ki jagah 'fullName' likhna zaroori hai!
          const newUser = await User.create({
-            fullName: profile.displayName,  // <--- YAHAN FIX KIYA HAI
+            fullName: profile.displayName,  
             email: profile.emails[0].value,
             googleId: profile.id,
-            avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : "" // Google wali photo bhi save hogi
+            avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : "" 
          });
          return done(null, newUser);
       }
