@@ -9,6 +9,7 @@ import session from 'express-session';
 import passport from 'passport'; 
 import './utils/passport.js'; 
 
+
 import connectDB from './config/database.js'; 
 import startAutomation from './utils/automation.js'; 
 
@@ -17,6 +18,7 @@ import tenantRoutes from './routes/tenantRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 // Ab dotenv pehle hi load ho chuka hai, toh Redis ko URL mil jayega
 connectDB();
@@ -62,6 +64,7 @@ app.use('/api/tenants', tenantRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: "Welcome to BizFlow API! 🚀 Engine is running perfectly." });
