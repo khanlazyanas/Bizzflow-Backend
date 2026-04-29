@@ -71,8 +71,8 @@ export const getFinancialInsights = async (req, res) => {
   try {
     console.log("🧠 [AI Advisor] Fetching financial data for insights...");
 
-    // 1. Database se active invoices nikalo (trash wale ignore karo)
-    const invoices = await Invoice.find({ isDeleted: false }).populate('tenantId');
+    // 🔥 FIX: 'tenantId' ki jagah 'tenant' ko populate kiya hai
+    const invoices = await Invoice.find({ isDeleted: false }).populate('tenant');
     
     let totalRevenue = 0;
     let pendingAmount = 0;
@@ -83,16 +83,15 @@ export const getFinancialInsights = async (req, res) => {
         totalRevenue += inv.amount;
       } else {
         pendingAmount += inv.amount;
-        if (inv.tenantId?.businessName) {
-          unpaidClients.push(inv.tenantId.businessName);
+        // 🔥 FIX: yahan bhi 'tenant' use kiya hai
+        if (inv.tenant?.businessName) {
+          unpaidClients.push(inv.tenant.businessName);
         }
       }
     });
 
-    // Duplicate clients ke naam hata do
     unpaidClients = [...new Set(unpaidClients)];
 
-    // 2. Agar first time user hai, toh default message bhej do
     if (totalRevenue === 0 && pendingAmount === 0) {
       return res.status(200).json({
         success: true,
@@ -100,7 +99,6 @@ export const getFinancialInsights = async (req, res) => {
       });
     }
 
-    // 3. Gemini AI ko data aur strict instructions bhejo
     const prompt = `
       You are an expert AI Financial Advisor for a B2B SaaS platform called BizFlow. 
       Analyze the following financial data for the user and give a short, punchy, and highly professional 2-sentence insight or advice. 
@@ -121,7 +119,6 @@ export const getFinancialInsights = async (req, res) => {
 
     console.log("✨ [AI Advisor] Insight Generated successfully!");
 
-    // 4. Frontend ko JSON response bhej do
     res.status(200).json({
       success: true,
       insight: aiInsight
