@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Invoice from '../models/Invoice.js'; // 🔥 NAYA: Database access ke liye
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -60,5 +61,74 @@ export const scanInvoiceImage = async (req, res) => {
   } catch (error) {
     console.error("❌ [AI Scanner] CRITICAL ERROR: ", error);
     res.status(500).json({ success: false, message: "Failed to scan invoice. Please try a clearer image." });
+  }
+};
+
+// ============================================================================
+// 🔥 NAYA FEATURE: AI Financial Advisor (Smart Analytics)
+// ============================================================================
+export const getFinancialInsights = async (req, res) => {
+  try {
+    console.log("🧠 [AI Advisor] Fetching financial data for insights...");
+
+    // 1. Database se active invoices nikalo (trash wale ignore karo)
+    const invoices = await Invoice.find({ isDeleted: false }).populate('tenantId');
+    
+    let totalRevenue = 0;
+    let pendingAmount = 0;
+    let unpaidClients = [];
+
+    invoices.forEach(inv => {
+      if (inv.status === 'Paid') {
+        totalRevenue += inv.amount;
+      } else {
+        pendingAmount += inv.amount;
+        if (inv.tenantId?.businessName) {
+          unpaidClients.push(inv.tenantId.businessName);
+        }
+      }
+    });
+
+    // Duplicate clients ke naam hata do
+    unpaidClients = [...new Set(unpaidClients)];
+
+    // 2. Agar first time user hai, toh default message bhej do
+    if (totalRevenue === 0 && pendingAmount === 0) {
+      return res.status(200).json({
+        success: true,
+        insight: "Welcome to BizFlow! Generate your first invoice to start getting AI-powered financial insights."
+      });
+    }
+
+    // 3. Gemini AI ko data aur strict instructions bhejo
+    const prompt = `
+      You are an expert AI Financial Advisor for a B2B SaaS platform called BizFlow. 
+      Analyze the following financial data for the user and give a short, punchy, and highly professional 2-sentence insight or advice. 
+      Talk directly to the user (e.g., "Your revenue...", "Focus on...").
+      Do NOT use markdown formatting, just plain text.
+      
+      Financial Data:
+      - Total Revenue Collected: $${totalRevenue}
+      - Pending/Unpaid Amount: $${pendingAmount}
+      - Clients with pending invoices: ${unpaidClients.join(', ') || 'None'}
+    `;
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    console.log("🤖 [AI Advisor] Analyzing data with Gemini...");
+    
+    const result = await model.generateContent(prompt);
+    const aiInsight = result.response.text().trim();
+
+    console.log("✨ [AI Advisor] Insight Generated successfully!");
+
+    // 4. Frontend ko JSON response bhej do
+    res.status(200).json({
+      success: true,
+      insight: aiInsight
+    });
+
+  } catch (error) {
+    console.error("❌ [AI Advisor] Error:", error);
+    res.status(500).json({ success: false, message: "Failed to generate AI insights." });
   }
 };
