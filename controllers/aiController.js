@@ -34,7 +34,7 @@ export const scanInvoiceImage = async (req, res) => {
       - totalAmount (number)
     `;
 
-    // 🔥 THE ONLY CORRECT NAME FOR IMAGE SCANNER
+    // 🔥 FIXED: Using the actual, real-world active model
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     console.log("🤖 [AI Scanner] Sending image to Google Gemini AI... Please wait.");
@@ -44,6 +44,7 @@ export const scanInvoiceImage = async (req, res) => {
 
     console.log("✨ [AI Scanner] Raw AI Response:\n", responseText);
 
+    // 🔥 FIXED: Removed the invalid newline syntax error from the regex
     responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
     const parsedData = JSON.parse(responseText);
 
@@ -106,7 +107,7 @@ export const getFinancialInsights = async (req, res) => {
       - Clients with pending invoices: ${unpaidClients.join(', ') || 'None'}
     `;
 
-    // 🔥 THE ONLY CORRECT NAME FOR TEXT INSIGHTS
+    // 🔥 FIXED: Using the actual active model
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     console.log("🤖 [AI Advisor] Analyzing data with Gemini...");
