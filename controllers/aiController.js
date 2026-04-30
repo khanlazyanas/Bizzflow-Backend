@@ -34,7 +34,7 @@ export const scanInvoiceImage = async (req, res) => {
       - totalAmount (number)
     `;
 
-    // 🔥 FIX 1: Scanner ke liye standard model use kiya hai (bina -latest ke)
+    // 🔥 THE ONLY CORRECT NAME FOR IMAGE SCANNER
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     console.log("🤖 [AI Scanner] Sending image to Google Gemini AI... Please wait.");
@@ -106,8 +106,8 @@ export const getFinancialInsights = async (req, res) => {
       - Clients with pending invoices: ${unpaidClients.join(', ') || 'None'}
     `;
 
-    // 🔥 FIX 2: Text Insights ke liye sabse stable 'gemini-pro' use kiya hai (Ye 404 nahi dega)
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // 🔥 THE ONLY CORRECT NAME FOR TEXT INSIGHTS
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     console.log("🤖 [AI Advisor] Analyzing data with Gemini...");
     
