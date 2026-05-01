@@ -62,14 +62,13 @@ export const scanInvoiceImage = async (req, res) => {
   }
 };
 
-// ============================================================================
-// 🔥 AI Financial Advisor (Smart Analytics)
+/// ============================================================================
+// 🔥 AI Financial Advisor (Smart Analytics) - WITH ANTI-CRASH FAILSAFE
 // ============================================================================
 export const getFinancialInsights = async (req, res) => {
   try {
     console.log("🧠 [AI Advisor] Fetching financial data for insights...");
 
-    // 🔥 FIX 3: THE BIGGEST FIX - Only fetch logged-in user's invoices to prevent API Crash!
     const invoices = await Invoice.find({ 
       user: req.user._id, 
       isDeleted: false 
@@ -111,28 +110,38 @@ export const getFinancialInsights = async (req, res) => {
       - Clients with pending invoices: ${unpaidClients.join(', ') || 'None'}
     `;
 
-    // 🔥 FIX 4: Universal Stable Model for Text
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
-    console.log("🤖 [AI Advisor] Analyzing data with Gemini...");
-    
-    const result = await model.generateContent(prompt);
-    const aiInsight = result.response.text().trim();
+    try {
+      // 🟢 ATTEMPT 1: Google Gemini API ko try karo
+      console.log("🤖 [AI Advisor] Analyzing data with Gemini...");
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(prompt);
+      const aiInsight = result.response.text().trim();
 
-    console.log("✨ [AI Advisor] Insight Generated successfully!");
+      console.log("✨ [AI Advisor] Google AI Insight Generated successfully!");
+      return res.status(200).json({ success: true, insight: aiInsight });
 
-    res.status(200).json({
-      success: true,
-      insight: aiInsight
-    });
+    } catch (apiError) {
+      // 🔴 ATTEMPT 2: Agar Google API Render ke server location ki wajah se fail ho jaye!
+      console.error("⚠️ [Google API Failed - Region/Key Issue]:", apiError.message);
+      console.log("🛡️ [Failsafe Active] Generating automatic system insight to prevent 500 Crash...");
+
+      // Backend khud ek AI jaisa logic lagayega aur dashboard crash nahi hone dega
+      let fallbackInsight = `Your total collected revenue is $${totalRevenue}. `;
+      
+      if (pendingAmount > 0) {
+        fallbackInsight += `Focus on recovering $${pendingAmount} pending from ${unpaidClients.length} clients (${unpaidClients.slice(0, 2).join(', ')}${unpaidClients.length > 2 ? ' etc' : ''}).`;
+      } else {
+        fallbackInsight += `Excellent work! All your active client invoices are fully paid. Keep growing!`;
+      }
+
+      return res.status(200).json({ 
+        success: true, 
+        insight: fallbackInsight 
+      });
+    }
 
   } catch (error) {
-    console.error("❌ [AI Advisor] Error:", error.message || error);
-    // 🔥 FIX 5: Frontend ko exact error bhejna (agar ab bhi fail hua toh Frontend Network tab me dikh jayega)
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to generate AI insights.",
-      exact_error: error.message || "Unknown Error" 
-    });
+    console.error("❌ [AI Advisor] Database/Server Error:", error.message);
+    res.status(500).json({ success: false, message: "Server Error", exact_error: error.message });
   }
 };
