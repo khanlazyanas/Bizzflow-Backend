@@ -34,7 +34,7 @@ export const scanInvoiceImage = async (req, res) => {
       - totalAmount (number)
     `;
 
-    // 🔥 FIXED: Using the actual, real-world active model
+    // 🔥 FIX 1: Universal Stable Model for Image
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     console.log("🤖 [AI Scanner] Sending image to Google Gemini AI... Please wait.");
@@ -44,7 +44,7 @@ export const scanInvoiceImage = async (req, res) => {
 
     console.log("✨ [AI Scanner] Raw AI Response:\n", responseText);
 
-    // 🔥 FIXED: Removed the invalid newline syntax error from the regex
+    // 🔥 FIX 2: Syntax Error Removed (No Enter space in regex)
     responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
     const parsedData = JSON.parse(responseText);
 
@@ -69,7 +69,11 @@ export const getFinancialInsights = async (req, res) => {
   try {
     console.log("🧠 [AI Advisor] Fetching financial data for insights...");
 
-    const invoices = await Invoice.find({ isDeleted: false }).populate('tenant');
+    // 🔥 FIX 3: THE BIGGEST FIX - Only fetch logged-in user's invoices to prevent API Crash!
+    const invoices = await Invoice.find({ 
+      user: req.user._id, 
+      isDeleted: false 
+    }).populate('tenant');
     
     let totalRevenue = 0;
     let pendingAmount = 0;
@@ -107,7 +111,7 @@ export const getFinancialInsights = async (req, res) => {
       - Clients with pending invoices: ${unpaidClients.join(', ') || 'None'}
     `;
 
-    // 🔥 FIXED: Using the actual active model
+    // 🔥 FIX 4: Universal Stable Model for Text
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     console.log("🤖 [AI Advisor] Analyzing data with Gemini...");
@@ -123,7 +127,12 @@ export const getFinancialInsights = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ [AI Advisor] Error:", error);
-    res.status(500).json({ success: false, message: "Failed to generate AI insights." });
+    console.error("❌ [AI Advisor] Error:", error.message || error);
+    // 🔥 FIX 5: Frontend ko exact error bhejna (agar ab bhi fail hua toh Frontend Network tab me dikh jayega)
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to generate AI insights.",
+      exact_error: error.message || "Unknown Error" 
+    });
   }
 };
