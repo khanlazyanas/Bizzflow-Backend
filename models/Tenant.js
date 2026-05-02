@@ -10,6 +10,11 @@ const tenantSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Owner name is required']
   },
+  // 🔥 NAYA FIELD: Ab Client ka email bhi save hoga database mein
+  email: {
+    type: String,
+    required: [true, 'Client email is required for sending invoices']
+  },
   plan: {
     type: String,
     enum: ['Starter Plan', 'Pro Plan', 'Enterprise'],
