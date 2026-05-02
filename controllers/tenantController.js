@@ -5,11 +5,12 @@ import Tenant from '../models/Tenant.js';
 // ==========================================
 export const createTenant = async (req, res) => {
   try {
-    const { businessName, ownerName, plan } = req.body;
+    // 🔥 FIX 1: 'email' ko request body se nikal liya
+    const { businessName, ownerName, email, plan } = req.body;
 
-    // Validation check
-    if (!businessName || !ownerName) {
-      return res.status(400).json({ success: false, message: "Please fill all details" });
+    // 🔥 FIX 2: Validation mein 'email' bhi zaroori kar diya
+    if (!businessName || !ownerName || !email) {
+      return res.status(400).json({ success: false, message: "Please fill all details including client email" });
     }
 
     // 🔥 LIMIT CHECK LOGIC
@@ -24,10 +25,11 @@ export const createTenant = async (req, res) => {
       });
     }
 
-    // Agar sab theek hai toh naya tenant bana do
+    // 🔥 FIX 3: Naya tenant banate waqt 'email' bhi database mein daal diya
     const tenant = await Tenant.create({
       businessName,
       ownerName,
+      email, 
       plan,
       adminId: req.user._id 
     });
