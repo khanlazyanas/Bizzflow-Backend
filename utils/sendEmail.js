@@ -2,7 +2,6 @@ import nodemailer from 'nodemailer';
 
 export const sendEmail = async (options) => {
   try {
-    // 1. Transporter banao (Jo email bhejega)
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -11,19 +10,18 @@ export const sendEmail = async (options) => {
       },
     });
 
-    // 2. Email ke options set karo
     const mailOptions = {
       from: process.env.EMAIL_FROM,
       to: options.email,
       subject: options.subject,
-      html: options.html, // HTML format use karenge taaki email sundar dikhe
+      html: options.html,
     };
 
-    // 3. Email bhej do
     await transporter.sendMail(mailOptions);
     console.log("Email sent successfully to:", options.email);
   } catch (error) {
-    console.error("Email bhejte waqt error aayi:", error);
-    throw new Error('Email could not be sent');
+    console.error("Email Error Detail:", error);
+    // 🔥 FIX: Ab generic error nahi, asli error message aage jayega
+    throw new Error(error.message || 'Email could not be sent');
   }
 };
