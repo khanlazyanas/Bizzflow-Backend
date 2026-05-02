@@ -7,7 +7,8 @@ import {
   // 🔥 NAYE IMPORTS
   getTrashedInvoices,
   restoreInvoice,
-  hardDeleteInvoice
+  hardDeleteInvoice,
+  emailInvoiceToClient
 } from '../controllers/invoiceController.js';
 import { isAuthenticated } from '../middlewares/auth.js';
 
@@ -36,5 +37,8 @@ router.route('/')
 router.route('/:id')
   .delete(isAuthenticated, deleteInvoice) // Ye ab soft-delete (Trash me bhejne) ka kaam karega
   .put(isAuthenticated, updateInvoiceStatus);
+
+router.route('/:id/send-email')
+  .post(isAuthenticated, emailInvoiceToClient);  
 
 export default router;
