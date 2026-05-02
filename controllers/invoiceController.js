@@ -1,7 +1,6 @@
 import Invoice from '../models/Invoice.js';
 // 🔥 FIX: Render (Linux) ke liye exact filename match hona zaroori hai. Lowercase 'e' kar diya hai.
-import { sendEmail } from '../utils/sendemail.js';
-
+import { sendEmail } from '../utils/sendEmail.js';
 export const createInvoice = async (req, res) => {
   try {
     const { tenantId, amount, dueDate } = req.body;
