@@ -201,7 +201,6 @@ export const forgotPassword = async (req, res) => {
     `;
 
     try {
-      // Adjusted to use 'html' inside your new sendEmail function
       await sendEmail({
         email: user.email,
         subject: 'BizFlow - Secure Password Recovery',
