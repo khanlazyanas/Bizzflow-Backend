@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import { sendCookie } from '../utils/sendCookie.js';
-import { sendEmail } from '../utils/mailer.js'; 
+import { sendEmail } from '../utils/sendEmail.js'; 
 import crypto from 'crypto'; 
 import { v2 as cloudinary } from 'cloudinary';
 import DataURIParser from 'datauri/parser.js';
@@ -279,7 +279,7 @@ export const sendLoginOtp = async (req, res) => {
     // OTP ko database me save karo (10 mins expiry ke sath)
     user.loginOtp = otp;
     user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
-    await user.save({ validateBeforeSave: false }); 
+    await user.save({ validateBeforeSave: false }); // Validate check skip kiya taaki baaki validation error na de
 
     // Premium HTML Email Template
     const emailHtml = `
