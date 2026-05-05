@@ -273,12 +273,15 @@ export const sendLoginOtp = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ success: false, message: "User not found. Please register first." });
 
+    // 6-digit random OTP generate karo
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // OTP ko database me save karo (10 mins expiry ke sath)
     user.loginOtp = otp;
-    user.loginOtpExpire = Date.now() + 10 * 60 * 1000; 
+    user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save({ validateBeforeSave: false }); 
 
+    // Premium HTML Email Template
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; text-align: center; padding: 40px 20px; background-color: #050505; color: #ffffff; border-radius: 10px;">
         <h2 style="color: #ffffff; font-weight: 800; margin-bottom: 5px;">Log in to BizFlow</h2>
@@ -286,31 +289,17 @@ export const sendLoginOtp = async (req, res) => {
         <div style="background-color: #18181b; padding: 20px; border-radius: 10px; margin: 30px auto; width: fit-content; border: 1px solid #3f3f46;">
           <h1 style="font-size: 40px; letter-spacing: 12px; margin: 0; color: #4f46e5;">${otp}</h1>
         </div>
+        <p style="color: #71717a; font-size: 12px;">This code will expire in 10 minutes. If you didn't request this, safely ignore this email.</p>
       </div>
     `;
 
-    // 🔥 MASTER HACK: OTP ko Server ke Console mein print kar diya
-    console.log("=====================================");
-    console.log(`🔑 RENDER BLOCKED EMAIL, BUT YOUR OTP IS: ${otp}`);
-    console.log("=====================================");
+    await sendEmail({
+      email: user.email,
+      subject: "BizFlow - Your Secure Login Code",
+      html: emailHtml
+    });
 
-    try {
-      // Hum try karenge email bhejne ki
-      await sendEmail({
-        email: user.email,
-        subject: "BizFlow - Your Secure Login Code",
-        html: emailHtml
-      });
-      res.status(200).json({ success: true, message: "OTP sent to your email successfully!" });
-    } catch (emailError) {
-      // 🔥 AGAR RENDER NE EMAIL BLOCK KIYA, TOH SERVER CRASH NAHI HOGA!
-      // Frontend pe success message jayega taaki tum OTP daal sako.
-      res.status(200).json({ 
-        success: true, 
-        message: "Email blocked by Server, but you can find the OTP in Render Logs!" 
-      });
-    }
-
+    res.status(200).json({ success: true, message: "OTP sent to your email successfully!" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
