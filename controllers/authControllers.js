@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import { sendCookie } from '../utils/sendCookie.js';
-import { sendEmail } from '../utils/sendEmail.js'; 
+import { sendEmail } from '../utils/mailer.js'; 
 import crypto from 'crypto'; 
 import { v2 as cloudinary } from 'cloudinary';
 import DataURIParser from 'datauri/parser.js';

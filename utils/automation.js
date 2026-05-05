@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import Invoice from '../models/Invoice.js';
-import { sendEmail } from './sendEmail.js'; 
+import { sendEmail } from './mailer.js'; 
 
 const startAutomation = () => {
   // 🔥 Schedule: Har raat 12:00 AM par chalega ('0 0 * * *')
