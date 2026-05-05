@@ -4,11 +4,15 @@ export const sendEmail = async (options) => {
   try {
     // 1. Transporter banao (Jo email bhejega)
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com', // service: 'gmail' ki jagah seedha host diya
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      // 🔥 ASLI FIX YAHAN HAI: Render ko force karega purana IPv4 network use karne ke liye
+      family: 4 
     });
 
     // 2. Email ke options set karo
