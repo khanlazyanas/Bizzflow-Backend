@@ -4,14 +4,12 @@ export const sendEmail = async (options) => {
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, 
+      port: 587, // 🔥 Port 465 se 587 kar diya
+      secure: false, // 🔥 587 ke liye ye false hona zaroori hai
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      // 🔥 ASLI FIX YAHAN HAI: Ye Render ko force karega ki wo IPv4 use kare aur crash na ho
-      family: 4, 
       tls: {
         rejectUnauthorized: false
       }
