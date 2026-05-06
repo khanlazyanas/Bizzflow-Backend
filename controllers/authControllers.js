@@ -36,7 +36,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// --- LOGIN USER ---
+// --- LOGIN USER (CLASSIC EMAIL & PASSWORD) ---
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -257,76 +257,4 @@ export const isProUser = (req, res, next) => {
     });
   }
   next();
-};
-
-// =======================================================
-// 🔥 NAYA FEATURE: MAGIC LINK / OTP LOGIN LOGIC
-// =======================================================
-
-// --- SEND LOGIN OTP ---
-export const sendLoginOtp = async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ success: false, message: "Email is required" });
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: "User not found. Please register first." });
-
-    // 6-digit random OTP generate karo
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // OTP ko database me save karo (10 mins expiry ke sath)
-    user.loginOtp = otp;
-    user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
-    await user.save({ validateBeforeSave: false }); // Validate check skip kiya taaki baaki validation error na de
-
-    // Premium HTML Email Template
-    const emailHtml = `
-      <div style="font-family: Arial, sans-serif; text-align: center; padding: 40px 20px; background-color: #050505; color: #ffffff; border-radius: 10px;">
-        <h2 style="color: #ffffff; font-weight: 800; margin-bottom: 5px;">Log in to BizFlow</h2>
-        <p style="color: #a1a1aa; font-size: 16px;">Here is your secure login code:</p>
-        <div style="background-color: #18181b; padding: 20px; border-radius: 10px; margin: 30px auto; width: fit-content; border: 1px solid #3f3f46;">
-          <h1 style="font-size: 40px; letter-spacing: 12px; margin: 0; color: #4f46e5;">${otp}</h1>
-        </div>
-        <p style="color: #71717a; font-size: 12px;">This code will expire in 10 minutes. If you didn't request this, safely ignore this email.</p>
-      </div>
-    `;
-
-    await sendEmail({
-      email: user.email,
-      subject: "BizFlow - Your Secure Login Code",
-      html: emailHtml
-    });
-
-    res.status(200).json({ success: true, message: "OTP sent to your email successfully!" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// --- VERIFY OTP & LOGIN ---
-export const verifyOtpLogin = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-
-    if (!email || !otp) return res.status(400).json({ success: false, message: "Email and OTP are required" });
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    // OTP aur Expiry Check karo
-    if (user.loginOtp !== otp || user.loginOtpExpire < Date.now()) {
-      return res.status(400).json({ success: false, message: "Invalid or expired OTP code" });
-    }
-
-    // OTP Sahi hai -> Purana OTP delete kar do
-    user.loginOtp = undefined;
-    user.loginOtpExpire = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    // Cookie generate karke login kara do
-    sendCookie(user, 200, res, `Welcome back via Magic Code, ${user.fullName}!`);
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
 };
