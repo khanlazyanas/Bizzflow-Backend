@@ -9,8 +9,12 @@ const userSchema = new mongoose.Schema({
   },
   businessName: {
     type: String,
-    // 🔥 FIX: Google users ke liye default "My Workspace" set kar diya
     default: "My Workspace" 
+  },
+  // 🔥 NAYA FEATURE: GST Number field for Setup Profile
+  gstNumber: {
+    type: String,
+    default: ""
   },
   email: {
     type: String,
@@ -20,7 +24,6 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    // 🔥 FIX: Password sirf tab required hoga agar user Google se login NAHI kar raha hai
     required: [
       function() { return !this.googleId; }, 
       'Password is required'
@@ -28,25 +31,17 @@ const userSchema = new mongoose.Schema({
     minlength: [8, 'Password must be at least 8 characters'],
     select: false 
   },
-  
-  // 🔥 NAYA FEATURE: Google Auth Field
   googleId: {
     type: String,
   },
-
   avatar: {
     type: String,
     default: ""
   },
-  
   isPro: {
     type: Boolean,
     default: false 
   },
-  
-  // OTP Login fields
-  loginOtp: String,
-  loginOtpExpire: Date,
   
   // Forgot Password fields
   resetPasswordToken: String,
@@ -55,13 +50,11 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 userSchema.pre('save', async function() {
-  // 🔥 FIX: Agar password modify nahi hua hai, YA user Google wala hai (password nahi hai), toh skip karo
   if (!this.isModified('password') || !this.password) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
 
 userSchema.methods.comparePassword = async function(enteredPassword) {
-  // Agar Google user bina password ke login karne ki koshish kare
   if (!this.password) return false; 
   return await bcrypt.compare(enteredPassword, this.password);
 };

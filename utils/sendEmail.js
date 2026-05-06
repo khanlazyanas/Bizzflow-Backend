@@ -1,33 +1,31 @@
-import nodemailer from 'nodemailer';
-
 export const sendEmail = async (options) => {
   try {
-    // 1. Transporter banao (Jo email bhejega)
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com', // service: 'gmail' ki jagah seedha host diya
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY, // Render se aayega
+        'content-type': 'application/json'
       },
-      // 🔥 ASLI FIX YAHAN HAI: Render ko force karega purana IPv4 network use karne ke liye
-      family: 4 
+      body: JSON.stringify({
+        sender: {
+          name: 'BizFlow Workspace',
+          email: process.env.EMAIL_FROM // Tumhara registered email
+        },
+        to: [{ email: options.email }],
+        subject: options.subject,
+        htmlContent: options.html
+      })
     });
 
-    // 2. Email ke options set karo
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: options.email,
-      subject: options.subject,
-      html: options.html, // HTML format use karenge taaki email sundar dikhe
-    };
+    const data = await response.json();
 
-    // 3. Email bhej do
-    await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully to:", options.email);
+    if (!response.ok) {
+      throw new Error(data.message || 'API se Email fail ho gaya');
+    }
+    console.log("🚀 Email sent successfully to:", options.email);
   } catch (error) {
-    console.error("Email bhejte waqt error aayi:", error);
+    console.error("Email bhejte waqt API error aayi:", error);
     throw new Error('Email could not be sent');
   }
 };

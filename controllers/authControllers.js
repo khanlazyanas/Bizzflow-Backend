@@ -92,17 +92,19 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
-// --- UPDATE USER PROFILE (WITH CLOUDINARY UPLOAD) ---
+// --- UPDATE USER PROFILE (WITH CLOUDINARY UPLOAD & NEW SETUP PROFILE FIELDS) ---
 export const updateProfile = async (req, res) => {
   try {
-    const { fullName, email } = req.body;
+    // 🔥 FIX: Added businessName and gstNumber to extract from request body
+    const { fullName, email, businessName, gstNumber } = req.body;
 
     const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email is already taken by another user.' });
     }
 
-    const updateData = { fullName, email };
+    // 🔥 FIX: Included businessName and gstNumber in updateData
+    const updateData = { fullName, email, businessName, gstNumber };
 
     if (req.file) {
       const parser = new DataURIParser();
