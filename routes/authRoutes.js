@@ -12,8 +12,7 @@ import {
   forgotPassword, 
   resetPassword, 
   isProUser,
-  sendLoginOtp, 
-  verifyOtpLogin 
+  
 } from "../controllers/authControllers.js"
 
 import { isAuthenticated } from '../middlewares/auth.js';
@@ -37,8 +36,8 @@ router.post('/register', authLimiter, registerUser);
 router.post('/login', authLimiter, loginUser);
 
 // OTP Auth Routes
-router.post('/send-otp', authLimiter, sendLoginOtp);
-router.post('/verify-otp', authLimiter, verifyOtpLogin);
+// router.post('/send-otp', authLimiter, sendLoginOtp);
+// router.post('/verify-otp', authLimiter, verifyOtpLogin);
 
 // =========================================================
 // 🔥 GOOGLE OAUTH ROUTES (100% FIXED)
