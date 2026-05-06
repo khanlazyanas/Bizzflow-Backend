@@ -4,7 +4,6 @@ import {
   deleteInvoice, 
   getInvoices, 
   updateInvoiceStatus,
-  // 🔥 NAYE IMPORTS
   getTrashedInvoices,
   restoreInvoice,
   hardDeleteInvoice,
@@ -35,9 +34,10 @@ router.route('/')
   .get(isAuthenticated, getInvoices);
 
 router.route('/:id')
-  .delete(isAuthenticated, deleteInvoice) // Ye ab soft-delete (Trash me bhejne) ka kaam karega
+  .delete(isAuthenticated, deleteInvoice) 
   .put(isAuthenticated, updateInvoiceStatus);
 
+// 🔥 SEND EMAIL ROUTE
 router.route('/:id/send-email')
   .post(isAuthenticated, emailInvoiceToClient);  
 

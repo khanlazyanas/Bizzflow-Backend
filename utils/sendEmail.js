@@ -1,7 +1,7 @@
 // utils/sendEmail.js
 export const sendEmail = async (options) => {
   try {
-    // 1. Ek dum hardcoded email check, taaki "sender required" wali error na aaye
+    
     const senderEmail = "anaskhan995620@gmail.com"; 
 
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -14,7 +14,7 @@ export const sendEmail = async (options) => {
       body: JSON.stringify({
         sender: {
           name: 'BizFlow Workspace',
-          email: senderEmail // Ab error ka koi chance nahi
+          email: senderEmail 
         },
         to: [{ email: options.email }],
         subject: options.subject,

@@ -1,6 +1,7 @@
 import Invoice from '../models/Invoice.js';
-// 🔥 FIX: Render (Linux) ke liye exact filename match hona zaroori hai. Lowercase 'e' kar diya hai.
+// 🔥 FIX: Render (Linux) ke liye exact filename match hona zaroori hai.
 import { sendEmail } from '../utils/sendEmail.js';
+
 export const createInvoice = async (req, res) => {
   try {
     const { tenantId, amount, dueDate } = req.body;
@@ -109,11 +110,17 @@ export const hardDeleteInvoice = async (req, res) => {
   }
 };
 
+// 🔥 NAYA FUNCTION: Send Email
 export const emailInvoiceToClient = async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id).populate('tenant');
     if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
     if (invoice.user.toString() !== req.user._id.toString()) return res.status(401).json({ success: false, message: 'Not authorized' });
+
+    // Ensure tenant exists
+    if (!invoice.tenant) {
+      return res.status(400).json({ success: false, message: 'Tenant details not found for this invoice.' });
+    }
 
     const clientEmail = invoice.tenant.email; 
     const clientName = invoice.tenant.businessName || 'Valued Client';
@@ -132,7 +139,7 @@ export const emailInvoiceToClient = async (req, res) => {
           </div>
           <div style="background-color: #ffffff; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
               <p style="margin: 0; color: #6b7280;">Total Amount Due</p>
-              <h2 style="margin: 5px 0 0 0; color: #111827;">$${invoice.amount}</h2>
+              <h2 style="margin: 5px 0 0 0; color: #111827;">$${Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</h2>
           </div>
           <p style="color: #4b5563; font-size: 14px; margin-top: 20px;">Please arrange the payment at your earliest convenience.</p>
           <br/>
@@ -148,7 +155,7 @@ export const emailInvoiceToClient = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Invoice sent to client successfully! 📩' });
   } catch (error) {
-    // 🔥 FIX: Ab frontend pe exact error aayegi
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Email Error:", error);
+    res.status(500).json({ success: false, message: error.message || "Failed to send email." });
   }
 };
