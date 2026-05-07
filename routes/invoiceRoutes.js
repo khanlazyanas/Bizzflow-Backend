@@ -7,15 +7,28 @@ import {
   getTrashedInvoices,
   restoreInvoice,
   hardDeleteInvoice,
-  emailInvoiceToClient
+  emailInvoiceToClient,
+  getPublicInvoice // 🔥 FIX: Ye missing tha
 } from '../controllers/invoiceController.js';
+
+// 🔥 FIX: Payment controllers import karne padenge
+import { createInvoicePayment, verifyInvoicePayment } from '../controllers/paymentController.js'; 
+
 import { isAuthenticated } from '../middlewares/auth.js';
 
 const router = express.Router();
 
 // ==========================================
+// 🔥 PUBLIC ROUTES (BINA LOGIN KE CHALENGE)
+// Inko hamesha baaki routes se upar rakhna hai
+// ==========================================
+router.route('/public/:id').get(getPublicInvoice);
+router.route('/:id/pay').post(createInvoicePayment);
+router.route('/verify-payment').post(verifyInvoicePayment);
+
+
+// ==========================================
 // 🔥 RECYCLE BIN (TRASH) ROUTES
-// Note: Inko hamesha '/:id' se upar rakhna zaroori hai!
 // ==========================================
 router.route('/trash')
   .get(isAuthenticated, getTrashedInvoices);
@@ -27,7 +40,7 @@ router.route('/:id/permanent')
   .delete(isAuthenticated, hardDeleteInvoice);
 
 // ==========================================
-// REGULAR ROUTES
+// REGULAR ROUTES (LOGIN CHAHIYE)
 // ==========================================
 router.route('/')
   .post(isAuthenticated, createInvoice)
