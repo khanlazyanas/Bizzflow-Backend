@@ -168,9 +168,10 @@ export const emailInvoiceToClient = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Client email is missing in Tenant records.' });
     }
 
-    // 🔗 Generate Public Payment Link
-    // Backend Render pe hai, aur Link Vercel/Frontend ka banega
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    // 🔥 FIX YAHAN HAI: Localhost ki jagah tumhara live Vercel link hardcode kar diya hai
+    // Dhyan de: Agar tumhara Vercel link kuch aur hai, toh isko update kar lena.
+    const frontendUrl = "https://bizzflow-frontend.vercel.app"; 
+    
     const publicLink = `${frontendUrl}/invoice/public/${invoice._id}`;
 
     const emailHtml = `
