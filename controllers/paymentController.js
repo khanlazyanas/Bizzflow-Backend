@@ -1,11 +1,8 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import User from '../models/User.js';
-import Invoice from '../models/Invoice.js'; // 🔥 Invoice model import karna padega
+import Invoice from '../models/Invoice.js'; 
 
-// ==========================================
-// 1. PRO SUBSCRIPTION PAYMENTS
-// ==========================================
 export const checkout = async (req, res) => {
   try {
     const instance = new Razorpay({
@@ -59,9 +56,6 @@ export const paymentVerification = async (req, res) => {
   }
 };
 
-// ==========================================
-// 2. 🔥 NAYA: INVOICE ONLINE PAYMENTS (CLIENT KE LIYE)
-// ==========================================
 export const createInvoicePayment = async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id);
@@ -73,20 +67,21 @@ export const createInvoicePayment = async (req, res) => {
     });
 
     const options = {
-      amount: Math.round(invoice.amount * 100), // Convert to paise
-      currency: "INR", // Change to USD if required
+      amount: Math.round(invoice.amount * 100), 
+      currency: "INR", 
       receipt: `inv_${invoice._id}`,
     };
 
     const order = await instance.orders.create(options);
     
-    // Save order ID in invoice
     invoice.razorpayOrderId = order.id;
     await invoice.save();
 
     res.status(200).json({ success: true, order });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Could not create payment order" });
+    // 🔥 FIX: Exact error pakadne ke liye console log aur error message return
+    console.error("🔥 RAZORPAY CRASH:", error);
+    res.status(500).json({ success: false, message: error.error?.description || error.message || "Could not create payment order" });
   }
 };
 
@@ -101,7 +96,6 @@ export const verifyInvoicePayment = async (req, res) => {
       .digest("hex");
 
     if (expectedSignature === razorpay_signature) {
-      // Payment Successful - Update Invoice Status
       const invoice = await Invoice.findById(invoice_id);
       invoice.status = 'Paid';
       invoice.paymentMethod = 'Online (Razorpay)';
@@ -117,7 +111,6 @@ export const verifyInvoicePayment = async (req, res) => {
   }
 };
 
-// Frontend ko sirf Key ID dene ke liye
 export const getApiKey = (req, res) => {
   res.status(200).json({ key: process.env.RAZORPAY_KEY_ID });
 };
