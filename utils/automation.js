@@ -29,8 +29,9 @@ const startAutomation = () => {
           inv.status = 'Overdue';
           await inv.save();
 
-          // 2. Public Link Generate karo
-          const frontendUrl = "https://bizzflow-frontend.vercel.app"; // 🔥 Apna Vercel link verify kar lena
+          // 🚨🚨🚨 DHYAN DE: YAHAN BHI APNA ASLI VERCEL LINK DAALO 🚨🚨🚨
+          const frontendUrl = process.env.FRONTEND_URL || "https://TUMHARA-ASLI-FRONTEND-LINK.vercel.app"; 
+          
           const publicLink = `${frontendUrl}/invoice/public/${inv._id}`;
 
           // 3. Premium Warning HTML Email
@@ -64,7 +65,7 @@ const startAutomation = () => {
           await sendEmail({
             email: inv.tenant.email, 
             subject: `URGENT: Overdue Payment Reminder - ${inv.invoiceNumber}`,
-            html: emailHtml // message ki jagah html bhejna hai
+            html: emailHtml
           });
 
           console.log(`📧 Reminder sent to: ${inv.tenant.email}`);

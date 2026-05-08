@@ -138,7 +138,7 @@ export const getPublicInvoice = async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id)
       .populate('tenant', 'businessName email phone address')
-      .populate('user', 'businessName email avatar fullName'); // Business owner details ke liye
+      .populate('user', 'businessName email avatar fullName'); 
       
     if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
     
@@ -168,9 +168,8 @@ export const emailInvoiceToClient = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Client email is missing in Tenant records.' });
     }
 
-    // 🔥 FIX YAHAN HAI: Localhost ki jagah tumhara live Vercel link hardcode kar diya hai
-    // Dhyan de: Agar tumhara Vercel link kuch aur hai, toh isko update kar lena.
-    const frontendUrl = "https://bizzflow-frontend.vercel.app"; 
+    // 🚨🚨🚨 DHYAN DE: YAHAN APNA ASLI VERCEL LINK DAALO BINA AAKHRI SLASH '/' KE 🚨🚨🚨
+    const frontendUrl = process.env.FRONTEND_URL || "https://TUMHARA-ASLI-FRONTEND-LINK.vercel.app"; 
     
     const publicLink = `${frontendUrl}/invoice/public/${invoice._id}`;
 
