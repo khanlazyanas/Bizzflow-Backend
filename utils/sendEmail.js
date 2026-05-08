@@ -1,7 +1,6 @@
 // utils/sendEmail.js
 export const sendEmail = async (options) => {
   try {
-    
     const senderEmail = "anaskhan995620@gmail.com"; 
 
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -18,13 +17,13 @@ export const sendEmail = async (options) => {
         },
         to: [{ email: options.email }],
         subject: options.subject,
-        htmlContent: options.html
+        // 🔥 YAHAN FIX KIYA: Agar 'html' na mile toh purana 'message' chala jayega
+        htmlContent: options.html || `<p style="white-space: pre-wrap;">${options.message || 'Notification from BizFlow'}</p>`
       })
     });
 
     const data = await response.json();
 
-    // 2. Agar koi dikkat aati hai toh ab exact error samajh aayegi
     if (!response.ok) {
       console.error("❌ BREVO NE EMAIL REJECT KIYA. REASON:", JSON.stringify(data));
       throw new Error(data.message || 'API se Email fail ho gaya');
