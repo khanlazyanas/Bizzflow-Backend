@@ -2,10 +2,12 @@ import Tenant from '../models/Tenant.js';
 
 export const createTenant = async (req, res) => {
   try {
-    const { businessName, ownerName, email, plan } = req.body;
+    // 🔥 FIX: 'phone' ko req.body se receive kar liya
+    const { businessName, ownerName, email, phone, plan } = req.body;
 
-    if (!businessName || !ownerName || !email) {
-      return res.status(400).json({ success: false, message: "Please fill all details including client email" });
+    // 🔥 FIX: Validation mein phone ko bhi add kar diya
+    if (!businessName || !ownerName || !email || !phone) {
+      return res.status(400).json({ success: false, message: "Please fill all details including client email and phone number" });
     }
 
     const tenantCount = await Tenant.countDocuments({ adminId: req.user._id });
@@ -17,6 +19,7 @@ export const createTenant = async (req, res) => {
       businessName,
       ownerName,
       email, 
+      phone, // 🔥 FIX: Database mein save karne ke liye pass kar diya
       plan,
       adminId: req.user._id 
     });
