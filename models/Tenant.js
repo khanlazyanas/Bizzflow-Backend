@@ -15,6 +15,11 @@ const tenantSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Client email is required for sending invoices']
   },
+  // 🔥 NAYA FIELD: WhatsApp message bhejne ke liye client ka phone number
+  phone: {
+    type: String,
+    required: [true, 'Client phone number is required for WhatsApp invoices']
+  },
   plan: {
     type: String,
     enum: ['Starter Plan', 'Pro Plan', 'Enterprise'],
