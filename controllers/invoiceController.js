@@ -1,6 +1,6 @@
 import Invoice from '../models/Invoice.js';
-// 🔥 FIX: Render (Linux) ke liye exact filename match hona zaroori hai.
 import { sendEmail } from '../utils/sendEmail.js';
+import twilio from 'twilio'; // 🔥 NAYA: Twilio import
 
 // ==========================================
 // 1. CREATE INVOICE
@@ -168,7 +168,6 @@ export const emailInvoiceToClient = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Client email is missing in Tenant records.' });
     }
 
-    // 🚨🚨🚨 DHYAN DE: YAHAN APNA ASLI VERCEL LINK DAALO BINA AAKHRI SLASH '/' KE 🚨🚨🚨
     const frontendUrl = process.env.FRONTEND_URL || "https://TUMHARA-ASLI-FRONTEND-LINK.vercel.app"; 
     
     const publicLink = `${frontendUrl}/invoice/public/${invoice._id}`;
@@ -208,5 +207,41 @@ export const emailInvoiceToClient = async (req, res) => {
   } catch (error) {
     console.error("Email Error:", error);
     res.status(500).json({ success: false, message: error.message || "Failed to send email." });
+  }
+};
+
+// ==========================================
+// 10. 🔥 SEND INVOICE VIA WHATSAPP (NAYA FEATURE)
+// ==========================================
+export const whatsappInvoiceToClient = async (req, res) => {
+  try {
+    const invoice = await Invoice.findById(req.params.id).populate('tenant');
+    if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+    if (invoice.user.toString() !== req.user._id.toString()) return res.status(401).json({ success: false, message: 'Not authorized' });
+
+    const clientPhone = invoice.tenant?.phone;
+    
+    if (!clientPhone) {
+      return res.status(400).json({ success: false, message: 'Client phone number is missing in Tenant records.' });
+    }
+
+    // Format phone (Ensure +91 for India if no country code provided)
+    const formattedPhone = clientPhone.startsWith('+') ? clientPhone : `+91${clientPhone}`;
+
+    const frontendUrl = process.env.FRONTEND_URL || "https://TUMHARA-ASLI-FRONTEND-LINK.vercel.app"; 
+    const publicLink = `${frontendUrl}/invoice/public/${invoice._id}`;
+
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+    await client.messages.create({
+      body: `Hello *${invoice.tenant.businessName}*,\n\nA new invoice (*${invoice.invoiceNumber}*) has been generated for your services.\n\n💰 *Total Due:* $${Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}\n📅 *Due Date:* ${new Date(invoice.dueDate).toDateString()}\n\n🔗 *Click here to View & Pay securely:*\n${publicLink}\n\nThank You,\nBizFlow Team`,
+      from: process.env.TWILIO_WHATSAPP_NUMBER,
+      to: `whatsapp:${formattedPhone}`
+    });
+
+    res.status(200).json({ success: true, message: 'WhatsApp sent successfully! 💬' });
+  } catch (error) {
+    console.error("WhatsApp Error:", error);
+    res.status(500).json({ success: false, message: error.message || "Failed to send WhatsApp." });
   }
 };

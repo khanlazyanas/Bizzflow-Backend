@@ -8,7 +8,8 @@ import {
   restoreInvoice,
   hardDeleteInvoice,
   emailInvoiceToClient,
-  getPublicInvoice 
+  getPublicInvoice,
+  whatsappInvoiceToClient // 🔥 NAYA IMPORT
 } from '../controllers/invoiceController.js';
 
 import { createInvoicePayment, verifyInvoicePayment } from '../controllers/paymentController.js'; 
@@ -46,6 +47,10 @@ router.route('/')
 // 🔥 SEND EMAIL ROUTE
 router.route('/:id/send-email')
   .post(isAuthenticated, emailInvoiceToClient);  
+
+// 🔥 SEND WHATSAPP ROUTE (NAYA FEATURE)
+router.route('/:id/send-whatsapp')
+  .post(isAuthenticated, whatsappInvoiceToClient);
 
 router.route('/:id')
   .delete(isAuthenticated, deleteInvoice) 
