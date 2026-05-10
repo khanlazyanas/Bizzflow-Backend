@@ -168,7 +168,8 @@ export const emailInvoiceToClient = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Client email is missing in Tenant records.' });
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || "https://TUMHARA-ASLI-FRONTEND-LINK.vercel.app"; 
+    // 🔥 FIX: Asli Vercel URL yahan add kar diya
+    const frontendUrl = process.env.FRONTEND_URL || "https://bizflow-saas-web.vercel.app"; 
     
     const publicLink = `${frontendUrl}/invoice/public/${invoice._id}`;
 
@@ -228,7 +229,8 @@ export const whatsappInvoiceToClient = async (req, res) => {
     // Format phone (Ensure +91 for India if no country code provided)
     const formattedPhone = clientPhone.startsWith('+') ? clientPhone : `+91${clientPhone}`;
 
-    const frontendUrl = process.env.FRONTEND_URL || "https://TUMHARA-ASLI-FRONTEND-LINK.vercel.app"; 
+    // 🔥 FIX: Asli Vercel URL yahan bhi add kar diya
+    const frontendUrl = process.env.FRONTEND_URL || "https://bizflow-saas-web.vercel.app"; 
     const publicLink = `${frontendUrl}/invoice/public/${invoice._id}`;
 
     const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
