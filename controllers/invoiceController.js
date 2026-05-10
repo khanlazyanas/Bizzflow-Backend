@@ -1,6 +1,6 @@
 import Invoice from '../models/Invoice.js';
 import { sendEmail } from '../utils/sendEmail.js';
-import twilio from 'twilio'; // 🔥 NAYA: Twilio import
+import twilio from 'twilio'; // 🔥 Twilio import
 
 // ==========================================
 // 1. CREATE INVOICE
@@ -27,18 +27,39 @@ export const createInvoice = async (req, res) => {
 };
 
 // ==========================================
-// 2. GET ALL INVOICES
+// 2. GET ALL INVOICES (🔥 PAGINATION ADDED)
 // ==========================================
 export const getInvoices = async (req, res) => {
   try {
+    // URL se page number aur limit nikalna (Default: page 1, 10 items)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Total kitne Invoices hain (Page count ke liye zaroori)
+    const totalInvoices = await Invoice.countDocuments({
+      user: req.user._id,
+      isDeleted: false
+    });
+
+    // Pura data laane ki jagah sirf required page ka data laana
     const invoices = await Invoice.find({ 
       user: req.user._id,
       isDeleted: false 
     })
       .populate('tenant', 'businessName')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)   // Itne elements chhod do
+      .limit(limit); // Sirf itne hi uthao
 
-    res.status(200).json({ success: true, count: invoices.length, invoices });
+    res.status(200).json({ 
+      success: true, 
+      count: invoices.length,
+      totalInvoices,
+      totalPages: Math.ceil(totalInvoices / limit),
+      currentPage: page,
+      invoices 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -168,7 +189,6 @@ export const emailInvoiceToClient = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Client email is missing in Tenant records.' });
     }
 
-    // 🔥 FIX: Asli Vercel URL yahan add kar diya
     const frontendUrl = process.env.FRONTEND_URL || "https://bizflow-saas-web.vercel.app"; 
     
     const publicLink = `${frontendUrl}/invoice/public/${invoice._id}`;
@@ -212,7 +232,7 @@ export const emailInvoiceToClient = async (req, res) => {
 };
 
 // ==========================================
-// 10. 🔥 SEND INVOICE VIA WHATSAPP (NAYA FEATURE)
+// 10. 🔥 SEND INVOICE VIA WHATSAPP
 // ==========================================
 export const whatsappInvoiceToClient = async (req, res) => {
   try {
@@ -226,10 +246,8 @@ export const whatsappInvoiceToClient = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Client phone number is missing in Tenant records.' });
     }
 
-    // Format phone (Ensure +91 for India if no country code provided)
     const formattedPhone = clientPhone.startsWith('+') ? clientPhone : `+91${clientPhone}`;
 
-    // 🔥 FIX: Asli Vercel URL yahan bhi add kar diya
     const frontendUrl = process.env.FRONTEND_URL || "https://bizflow-saas-web.vercel.app"; 
     const publicLink = `${frontendUrl}/invoice/public/${invoice._id}`;
 
